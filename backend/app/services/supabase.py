@@ -12,11 +12,16 @@ DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
 # Supabase 클라이언트 (DEV_MODE가 아닐 때만 생성)
 supabase = None
 
-if not DEV_MODE:
+supabase_url = os.getenv("SUPABASE_URL", "")
+supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
+
+# URL과 KEY가 있을 때만 클라이언트 생성
+if not DEV_MODE and supabase_url and supabase_key:
     from supabase import create_client, Client
-    supabase_url = os.getenv("SUPABASE_URL", "")
-    supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
     supabase: Client = create_client(supabase_url, supabase_key)
+elif not DEV_MODE:
+    print(f"[WARNING] SUPABASE_URL or SUPABASE_SERVICE_KEY not set. Running in DEV_MODE.")
+    DEV_MODE = True
 
 
 def get_recording(recording_id: str) -> Optional[dict]:
