@@ -5,7 +5,7 @@ azure-cognitiveservices-speech==1.35.0
 supabase==2.3.4
 python-multipart==0.0.6
 pydantic==2.5.3
-httpx==0.26.0
+httpx==0.25.2
 # 오디오 변환
 pydub==0.25.1
 # 포먼트(공명) 분석용
