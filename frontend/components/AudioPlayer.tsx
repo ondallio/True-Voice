@@ -1,4 +1,4 @@
-// 오디오 플레이어 컴포넌트 - 미니멀 디자인
+// 오디오 플레이어 컴포넌트
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -22,15 +22,23 @@ export default function AudioPlayer({ audioUrl, title = '내 녹음' }: AudioPla
   const [position, setPosition] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // 컴포넌트 언마운트 시 사운드 정리
   useEffect(() => {
-    return () => { if (sound) sound.unloadAsync(); };
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
   }, [sound]);
 
+  // 오디오 상태 업데이트 콜백
   const onPlaybackStatusUpdate = (status: any) => {
     if (status.isLoaded) {
       setPosition(status.positionMillis || 0);
       setDuration(status.durationMillis || 0);
       setIsPlaying(status.isPlaying);
+      
+      // 재생 완료 시
       if (status.didJustFinish) {
         setIsPlaying(false);
         setPosition(0);
@@ -38,37 +46,48 @@ export default function AudioPlayer({ audioUrl, title = '내 녹음' }: AudioPla
     }
   };
 
+  // 재생/일시정지 토글
   async function togglePlayback() {
     try {
       if (sound) {
         if (isPlaying) {
           await sound.pauseAsync();
         } else {
-          if (position >= duration - 100) await sound.setPositionAsync(0);
+          // 끝까지 재생된 경우 처음부터 다시 시작
+          if (position >= duration - 100) {
+            await sound.setPositionAsync(0);
+          }
           await sound.playAsync();
         }
       } else {
+        // 처음 재생 시 사운드 로드
         setIsLoading(true);
         setError(null);
+        
+        // 오디오 모드 설정
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
           playsInSilentModeIOS: true,
           staysActiveInBackground: false,
         });
+        
         const { sound: newSound } = await Audio.Sound.createAsync(
           { uri: audioUrl },
           { shouldPlay: true },
           onPlaybackStatusUpdate
         );
+        
         setSound(newSound);
         setIsLoading(false);
       }
     } catch (err) {
-      setError('재생할 수 없습니다');
+      console.error('재생 오류:', err);
+      setError('오디오를 재생할 수 없습니다');
       setIsLoading(false);
     }
   }
 
+  // 시간 포맷팅 (밀리초 -> MM:SS)
   function formatTime(ms: number): string {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -76,40 +95,51 @@ export default function AudioPlayer({ audioUrl, title = '내 녹음' }: AudioPla
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   }
 
+  // 진행률 계산
   const progress = duration > 0 ? (position / duration) * 100 : 0;
 
   if (error) {
     return (
-      <View style={styles.errorBox}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
+      <View style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorIcon}>⚠️</Text>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <TouchableOpacity
-          style={[styles.playBtn, isPlaying && styles.playBtnActive]}
-          onPress={togglePlayback}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
-          )}
-        </TouchableOpacity>
+      <View style={styles.playerCard}>
+        {/* 제목 */}
+        <Text style={styles.title}>🎧 {title}</Text>
+        
+        {/* 컨트롤 영역 */}
+        <View style={styles.controlsContainer}>
+          {/* 재생 버튼 */}
+          <TouchableOpacity
+            style={styles.playButton}
+            onPress={togglePlayback}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.playButtonText}>
+                {isPlaying ? '⏸️' : '▶️'}
+              </Text>
+            )}
+          </TouchableOpacity>
 
-        <View style={styles.info}>
-          <Text style={styles.title}>{title}</Text>
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBg}>
-              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          {/* 진행 바 & 시간 */}
+          <View style={styles.progressSection}>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${progress}%` }]} />
             </View>
-            <View style={styles.timeRow}>
-              <Text style={styles.time}>{formatTime(position)}</Text>
-              <Text style={styles.time}>{formatTime(duration)}</Text>
+            <View style={styles.timeContainer}>
+              <Text style={styles.timeText}>{formatTime(position)}</Text>
+              <Text style={styles.timeText}>{formatTime(duration)}</Text>
             </View>
           </View>
         </View>
@@ -120,83 +150,82 @@ export default function AudioPlayer({ audioUrl, title = '내 녹음' }: AudioPla
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginVertical: 12,
   },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  playerCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
-  playBtn: {
+  title: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#2c3e50',
+    marginBottom: 12,
+  },
+  controlsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  playButton: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#6366f1',
+    backgroundColor: '#3498db',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 14,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
+    marginRight: 12,
+    shadowColor: '#3498db',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
     elevation: 3,
   },
-  playBtnActive: {
-    backgroundColor: '#ef4444',
-    shadowColor: '#ef4444',
+  playButtonText: {
+    fontSize: 20,
   },
-  playIcon: {
-    fontSize: 18,
-    color: '#fff',
-  },
-  info: {
+  progressSection: {
     flex: 1,
   },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#374151',
-    marginBottom: 8,
-  },
-  progressContainer: {
-    flex: 1,
-  },
-  progressBg: {
-    height: 4,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 2,
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: '#ecf0f1',
+    borderRadius: 3,
     overflow: 'hidden',
   },
-  progressFill: {
+  progressBar: {
     height: '100%',
-    backgroundColor: '#6366f1',
-    borderRadius: 2,
+    backgroundColor: '#3498db',
+    borderRadius: 3,
   },
-  timeRow: {
+  timeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 6,
   },
-  time: {
-    fontSize: 11,
-    color: '#9ca3af',
-    fontVariant: ['tabular-nums'],
+  timeText: {
+    fontSize: 12,
+    color: '#95a5a6',
   },
-  errorBox: {
-    backgroundColor: '#fef2f2',
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fdf2f2',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 16,
+  },
+  errorIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   errorText: {
     fontSize: 13,
-    color: '#ef4444',
+    color: '#e74c3c',
   },
 });
+

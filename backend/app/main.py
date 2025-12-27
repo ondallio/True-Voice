@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from app.routers import analyze, tts
+from app.routers import analyze
 
 # 환경 변수 로드
 load_dotenv()
@@ -27,7 +27,6 @@ app.add_middleware(
 
 # 라우터 등록
 app.include_router(analyze.router, prefix="/api", tags=["analyze"])
-app.include_router(tts.router, prefix="/api", tags=["tts"])
 
 
 @app.get("/")
