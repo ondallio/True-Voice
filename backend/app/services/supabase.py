@@ -17,8 +17,14 @@ supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
 
 # URL과 KEY가 있을 때만 클라이언트 생성
 if not DEV_MODE and supabase_url and supabase_key:
-    from supabase import create_client, Client
-    supabase: Client = create_client(supabase_url, supabase_key)
+    try:
+        from supabase import create_client, Client
+        supabase: Client = create_client(supabase_url, supabase_key)
+        print(f"[INFO] Supabase client created successfully")
+    except Exception as e:
+        print(f"[ERROR] Failed to create Supabase client: {e}")
+        print(f"[WARNING] Falling back to DEV_MODE")
+        DEV_MODE = True
 elif not DEV_MODE:
     print(f"[WARNING] SUPABASE_URL or SUPABASE_SERVICE_KEY not set. Running in DEV_MODE.")
     DEV_MODE = True
