@@ -1,13 +1,9 @@
 # FastAPI 메인 엔트리포인트
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
+from app.config import settings
 from app.routers import analyze
-
-# 환경 변수 로드
-load_dotenv()
 
 # FastAPI 앱 생성
 app = FastAPI(
@@ -52,10 +48,9 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.getenv("PORT", 8000))
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=port,
+        port=settings.PORT,
         reload=True,
     )

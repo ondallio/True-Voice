@@ -4,15 +4,14 @@ import tempfile
 from typing import Optional
 from dataclasses import dataclass
 import azure.cognitiveservices.speech as speechsdk
-from dotenv import load_dotenv
 from pydub import AudioSegment
 import io
 
-load_dotenv()
+from app.config import settings
 
-# Azure Speech 설정
-AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "")
-AZURE_REGION = os.getenv("AZURE_REGION", "koreacentral")
+# Azure Speech 설정 (config에서 가져옴)
+AZURE_SPEECH_KEY = settings.AZURE_SPEECH_KEY
+AZURE_REGION = settings.AZURE_REGION
 
 
 @dataclass

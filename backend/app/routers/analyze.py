@@ -1,7 +1,7 @@
 # 분석 API 라우터
-import os
 from fastapi import APIRouter, HTTPException
 
+from app.config import settings
 from app.schemas import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -23,9 +23,6 @@ from app.services.tone_analysis import analyze_tone, get_mock_tone_result
 
 router = APIRouter()
 
-# 개발 모드 확인
-DEV_MODE = os.getenv("DEV_MODE", "false").lower() == "true"
-
 
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_recording(request: AnalyzeRequest):
@@ -43,7 +40,7 @@ async def analyze_recording(request: AnalyzeRequest):
     include_tone = request.include_tone
 
     # 개발 모드에서는 목업 결과 반환
-    if DEV_MODE:
+    if settings.DEV_MODE:
         mock_result = get_mock_result(reference_text)
 
         # 공명 목업 결과
